@@ -2,64 +2,43 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats as stats
-import psycopg2
 import requests
-import forecast as fc
 
 # API endpoint and token (not used for actual values but could be useful for future reference)
 url = "https://api.waqi.info/feed/here/?token=853cea3387dc974cf970e30ae0e64ba50e3dface"
 file_path = "pm10pomiaryCopy.csv"
 
-DB_HOST = "localhost"
-DB_NAME = "air_pollution"
-DB_USER = "postgres"
-DB_PASS = "test1"
+
+
 
 
 # Function to prepare pollution data, specifically for PM10
 def preparePollutionData():
-    # Default min and max values for PM10
+# Default min and max values for PM10
     default_ranges = {
-        'PM10': {'min': 7.1, 'max': 25.2}
+            'PM10': {'min': 7.1, 'max': 25.2}
     }
 
+    # Load PM10 data from CSV file
     try:
-        # Connect to the PostgreSQL database
-        connection = psycopg2.connect(
-            host=DB_HOST,
-            database=DB_NAME,
-            user=DB_USER,
-            password=DB_PASS
-        )
-        cursor = connection.cursor()
+        # Read data from the CSV file
+        data = pd.read_csv(file_path, usecols=['Date', 'PM10'], parse_dates=['Date'])
 
-        # Query to retrieve data
-        query = """
-           SELECT date, pm10
-           FROM test_pollution 
-           WHERE PM10 IS NOT NULL
-           ORDER BY date;
-           """
-        cursor.execute(query)
+            # Ensure data is sorted by date in case it isn't already
+        data = data.sort_values(by='Date').reset_index(drop=True)
 
-        # Fetch the data and load it into a pandas DataFrame
-        records = cursor.fetchall()
-        column_names = [desc[0] for desc in cursor.description]
-        data = pd.DataFrame(records, columns=column_names)
-
-        print("Pollutant data successfully retrieved from the database.")
+        print("Pollutant data successfully retrieved from CSV.")
         return data, default_ranges['PM10']['min'], default_ranges['PM10']['max']
 
-    except psycopg2.Error as e:
-        print(f"Error connecting to PostgreSQL database: {e}")
+    except FileNotFoundError:
+        print(f"Error: File {file_path} not found.")
         return None, None, None
-
-    finally:
-        # Ensure the connection is closed
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
+    except pd.errors.EmptyDataError:
+        print("Error: CSV file is empty.")
+        return None, None, None
+    except KeyError:
+        print("Error: CSV file does not contain 'PM10' column.")
+        return None, None, None
 
 
 # Fetch pollution data and default ranges
@@ -68,7 +47,7 @@ if pollution_data is None:
     raise Exception("Unable to load PM10 data.")
 
 # Number of Monte Carlo simulations per hour
-NUM_SIMULATIONS = 10
+NUM_SIMULATIONS = 1
 
 # Initialize lists for plotting results
 hours = []
@@ -80,13 +59,13 @@ actual_values = []
 
 # Function to calculate confidence interval
 def confidence_interval(data, confidence=0.95):
-    # print(f"Data: {data}")
+    print(f"Data: {data}")
     mean = np.mean(data)
     print(f"MEAN: {mean}")
-    se = stats.sem(data)  # Standard error
-    print(f"Standard error: {se}")
-    margin = se * stats.t.ppf((1 + confidence) / 2., len(data) - 1)
-    return mean, mean - margin, mean + margin
+    # se = stats.sem(data)  # Standard error
+    # print(f"Standard error: {se}")
+    # margin = se * stats.t.ppf((1 + confidence) / 2., len(data) - 1)
+    return mean
 
 
 # Monte Carlo simulation for each hour based on actual PM10 values in the CSV
@@ -95,14 +74,16 @@ for idx, row in pollution_data.iterrows():
     actual_value = row['PM10']
 
     # Estimate mean and std deviation for normal distribution
+    mean_val = (pm10_min + pm10_max) / 2
     mean_by_real_value = np.mean(pollution_data['PM10'])
+    std_dev = (pm10_max - pm10_min) / 4
     std_dev_by_real_value = np.std(pollution_data['PM10'], ddof=1)
 
     # Run simulations for the current hour
     # simulated_values = np.random.normal(mean_val, std_dev, NUM_SIMULATIONS)
     simulated_values = np.random.normal(row['PM10'], std_dev_by_real_value, NUM_SIMULATIONS)
     print(f"Row value: {row['PM10']}")
-    mean, lower_ci, upper_ci = confidence_interval(simulated_values)
+    mean = confidence_interval(simulated_values)
 
     # Append results for plotting
     hours.append(hour)
@@ -110,8 +91,6 @@ for idx, row in pollution_data.iterrows():
     Cavg = round(np.mean(simulated_means))
     Clow = round(min(simulated_means), 2)
     Chigh = round(max(simulated_means), 2)
-    lower_conf_intervals.append(lower_ci)
-    upper_conf_intervals.append(upper_ci)
     actual_values.append(actual_value)
 print("______________________________________")
 print("AIR QUALITY INDEX for SIMULATION")
@@ -158,20 +137,21 @@ print(f"Simulation AQI US :  {Sim_indexUS}")
 
 print(f"Random points for simulation: {simulated_means}")
 print(f"Standard deviation of source data: {std_dev_by_real_value}")
+
 # Plotting
 plt.figure(figsize=(12, 6))
 
 # Plot the mean simulated values with confidence intervals as a shaded area
 plt.plot(hours, simulated_means, color='blue', label="Mean Simulated PM10")
-plt.scatter(hours, lower_conf_intervals, upper_conf_intervals, color='skyblue', alpha=0.3,
-            label="conf_intervals_Lower")
-plt.scatter(hours, upper_conf_intervals, color='black', alpha=0.3,
-            label="conf_intervals_Upper")
+# plt.scatter(hours, lower_conf_intervals, upper_conf_intervals, color='skyblue', alpha=0.3,
+#             label="conf_intervals_Lower")
+# plt.scatter(hours, upper_conf_intervals, color='black', alpha=0.3,
+#             label="conf_intervals_Upper")
 # Plot the actual PM10 values as points
 plt.plot(hours, actual_values, 'ro-', label="Actual PM10", markersize=5)
 
 # Labels and Legend
-plt.title("PM10 Simulation Over 24 Hours X10")
+plt.title("PM10 Simulation Over 24 Hours X1")
 plt.xlabel("Hour")
 plt.ylabel("PM10 Value")
 plt.legend()
@@ -180,8 +160,7 @@ plt.tight_layout()
 plt.show()
 
 # Print summary of results
-for hour, mean, ci, actual in zip(hours, simulated_means, zip(lower_conf_intervals, upper_conf_intervals),
-                                  actual_values):
+for hour, mean, ci, actual in zip(hours, simulated_means, actual_values):
     print(f"\n--- Hour {hour} ---")
     print(f"Mean simulated PM10: {mean:.2f}")
     print(f"95% Confidence Interval: ({ci[0]:.2f}, {ci[1]:.2f})")

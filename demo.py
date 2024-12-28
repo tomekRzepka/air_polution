@@ -46,3 +46,10 @@ if __name__ == "__main__":
     print(f"Mean: {stats_result['mean']:.4f}")
     print(f"Standard Deviation (EmpSÊ): {stats_result['standard_deviation']:.4f}")
     print(f"Monte Carlo Error of Std Dev: {stats_result['monte_carlo_error']:.4f}")
+
+
+def std(numbers):
+    n = len(numbers)
+    mean_value = sum(numbers) / n
+    variance = sum((x - mean_value) ** 2 for x in numbers) / n
+    return variance ** 0.5

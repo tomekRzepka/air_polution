@@ -22,45 +22,13 @@ def preparePollutionData():
     default_ranges = {
         'PM10': {'min': 7.1, 'max': 25.2}
     }
-
     try:
-        # Connect to the PostgreSQL database
-        connection = psycopg2.connect(
-            host=DB_HOST,
-            database=DB_NAME,
-            user=DB_USER,
-            password=DB_PASS
-        )
-        cursor = connection.cursor()
-
-        # Query to retrieve data
-        query = """
-           SELECT date, pm10
-           FROM test_pollution 
-           WHERE PM10 IS NOT NULL
-           ORDER BY date;
-           """
-        cursor.execute(query)
-
-        # Fetch the data and load it into a pandas DataFrame
-        records = cursor.fetchall()
-        column_names = [desc[0] for desc in cursor.description]
-        data = pd.DataFrame(records, columns=column_names)
-
-        print("Pollutant data successfully retrieved from the database.")
+        data = fc.get_last_24_predictions()  # Ensure this returns valid data
+        if not isinstance(data, pd.DataFrame):  # Ensure it's a DataFrame
+            raise ValueError("Expected a DataFrame from fc.last_24_predictions")
         return data, default_ranges['PM10']['min'], default_ranges['PM10']['max']
-
-    except psycopg2.Error as e:
-        print(f"Error connecting to PostgreSQL database: {e}")
-        return None, None, None
-
-    finally:
-        # Ensure the connection is closed
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
-
+    except Exception as e:
+        raise Exception(f"Error while fetching last 24 predictions: {e}")
 
 # Fetch pollution data and default ranges
 pollution_data, pm10_min, pm10_max = preparePollutionData()

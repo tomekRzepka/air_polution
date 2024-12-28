@@ -21,3 +21,15 @@
 22.1
 14.9
 10.6
+
+  [Aplikacja Webowa]   [Serwer Sieciowy]   [Serwer Bazy Danych]
+        |                     |                     |
+   [Logi aplikacyjne]   [Logi sieciowe]     [Logi bazy danych]
+        |                     |                     |
+        +--------- Filebeat (zbieranie logów) ----------+
+                              |
+                          [Logstash]
+                              |
+                        [Elasticsearch]
+                              |
+                        [Grafana Dashboard]

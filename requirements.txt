@@ -5,3 +5,5 @@ seaborn
 scipy
 requests
 statsmodels
+tensorflow
+keras
