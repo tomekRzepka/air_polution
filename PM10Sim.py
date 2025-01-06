@@ -2,68 +2,15 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats as stats
-import psycopg2
-import requests
-import forecast as fc
-
-# API endpoint and token (not used for actual values but could be useful for future reference)
-url = "https://api.waqi.info/feed/here/?token=853cea3387dc974cf970e30ae0e64ba50e3dface"
-file_path = "pm10pomiaryCopy.csv"
-
-DB_HOST = "localhost"
-DB_NAME = "air_pollution"
-DB_USER = "postgres"
-DB_PASS = "test1"
-
-
-# Function to prepare pollution data, specifically for PM10
-def preparePollutionData():
-    # Default min and max values for PM10
-    default_ranges = {
-        'PM10': {'min': 7.1, 'max': 25.2}
-    }
-
-    try:
-        # Connect to the PostgreSQL database
-        connection = psycopg2.connect(
-            host=DB_HOST,
-            database=DB_NAME,
-            user=DB_USER,
-            password=DB_PASS
-        )
-        cursor = connection.cursor()
-
-        # Query to retrieve data
-        query = """
-           SELECT date, pm10
-           FROM test_pollution 
-           WHERE PM10 IS NOT NULL
-           ORDER BY date;
-           """
-        cursor.execute(query)
-
-        # Fetch the data and load it into a pandas DataFrame
-        records = cursor.fetchall()
-        column_names = [desc[0] for desc in cursor.description]
-        data = pd.DataFrame(records, columns=column_names)
-
-        print("Pollutant data successfully retrieved from the database.")
-        return data, default_ranges['PM10']['min'], default_ranges['PM10']['max']
-
-    except psycopg2.Error as e:
-        print(f"Error connecting to PostgreSQL database: {e}")
-        return None, None, None
-
-    finally:
-        # Ensure the connection is closed
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
+import DataRepository as dr
+import DataService as ds
 
 
 # Fetch pollution data and default ranges
-pollution_data, pm10_min, pm10_max = preparePollutionData()
+day=13
+real_time_data, pm10_min, pm10_max = dr.getPM10Values(day)
+hourly_data = dr.getHourlyPM10Values(day)
+pollution_data = ds.forecastData(hourly_data)
 if pollution_data is None:
     raise Exception("Unable to load PM10 data.")
 
@@ -89,30 +36,30 @@ def confidence_interval(data, confidence=0.95):
     return mean, mean - margin, mean + margin
 
 
-# Monte Carlo simulation for each hour based on actual PM10 values in the CSV
-for idx, row in pollution_data.iterrows():
-    hour = row['Date'].hour
-    actual_value = row['PM10']
+# Monte Carlo simulation for each hour
+counter = 0
+for row in pollution_data:
 
     # Estimate mean and std deviation for normal distribution
-    mean_by_real_value = np.mean(pollution_data['PM10'])
-    std_dev_by_real_value = np.std(pollution_data['PM10'], ddof=1)
+    mean_by_real_value = np.mean(pollution_data)
+    std_dev_by_real_value = np.std(pollution_data, ddof=1)
 
     # Run simulations for the current hour
     # simulated_values = np.random.normal(mean_val, std_dev, NUM_SIMULATIONS)
-    simulated_values = np.random.normal(row['PM10'], std_dev_by_real_value, NUM_SIMULATIONS)
-    print(f"Row value: {row['PM10']}")
+    simulated_values = np.random.normal(row, std_dev_by_real_value, NUM_SIMULATIONS)
+    print(f"Row value: {row}")
     mean, lower_ci, upper_ci = confidence_interval(simulated_values)
 
     # Append results for plotting
-    hours.append(hour)
+    hours.append(counter)
     simulated_means.append(mean)
     Cavg = round(np.mean(simulated_means))
     Clow = round(min(simulated_means), 2)
     Chigh = round(max(simulated_means), 2)
     lower_conf_intervals.append(lower_ci)
     upper_conf_intervals.append(upper_ci)
-    actual_values.append(actual_value)
+    actual_values.append(real_time_data['pm10'][counter])
+    counter += 1
 print("______________________________________")
 print("AIR QUALITY INDEX for SIMULATION")
 print(f"Index mean:  {Cavg}")
@@ -169,7 +116,7 @@ plt.scatter(hours, upper_conf_intervals, color='black', alpha=0.3,
             label="conf_intervals_Upper")
 # Plot the actual PM10 values as points
 plt.plot(hours, actual_values, 'ro-', label="Actual PM10", markersize=5)
-
+plt.plot(hours, pollution_data, color='brown', label="Simulated PM10 Core", markersize=5)
 # Labels and Legend
 plt.title("PM10 Simulation Over 24 Hours X10")
 plt.xlabel("Hour")
@@ -180,10 +127,11 @@ plt.tight_layout()
 plt.show()
 
 # Print summary of results
-for hour, mean, ci, actual in zip(hours, simulated_means, zip(lower_conf_intervals, upper_conf_intervals),
-                                  actual_values):
+for hour, mean, ci, actual,forecast in zip(hours, simulated_means, zip(lower_conf_intervals, upper_conf_intervals),
+                                  actual_values,pollution_data):
     print(f"\n--- Hour {hour} ---")
     print(f"Mean simulated PM10: {mean:.2f}")
     print(f"95% Confidence Interval: ({ci[0]:.2f}, {ci[1]:.2f})")
     print(f"Actual PM10: {actual}")
+    print(f"Forecast PM10: {forecast}")
     print(f"Delta (Actual - Simulated Mean): {actual - mean:.2f}")
