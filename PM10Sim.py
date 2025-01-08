@@ -60,6 +60,7 @@ for row in pollution_data:
     upper_conf_intervals.append(upper_ci)
     actual_values.append(real_time_data['pm10'][counter])
     counter += 1
+
 print("______________________________________")
 print("AIR QUALITY INDEX for SIMULATION")
 print(f"Index mean:  {Cavg}")

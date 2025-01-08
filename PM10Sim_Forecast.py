@@ -4,39 +4,31 @@ import matplotlib.pyplot as plt
 import scipy.stats as stats
 import psycopg2
 import requests
-import forecast as fc
+import forecastService as fc
+import seaborn as sns
 
-# API endpoint and token (not used for actual values but could be useful for future reference)
-url = "https://api.waqi.info/feed/here/?token=853cea3387dc974cf970e30ae0e64ba50e3dface"
+
+
 file_path = "pm10pomiaryCopy.csv"
-
-DB_HOST = "localhost"
-DB_NAME = "air_pollution"
-DB_USER = "postgres"
-DB_PASS = "test1"
-
 
 # Function to prepare pollution data, specifically for PM10
 def preparePollutionData():
     # Default min and max values for PM10
-    default_ranges = {
-        'PM10': {'min': 7.1, 'max': 25.2}
-    }
+
     try:
-        data = fc.get_last_24_predictions()  # Ensure this returns valid data
-        if not isinstance(data, pd.DataFrame):  # Ensure it's a DataFrame
-            raise ValueError("Expected a DataFrame from fc.last_24_predictions")
-        return data, default_ranges['PM10']['min'], default_ranges['PM10']['max']
+        predicted_data, real_data = fc.get_last_24_predictions_reals()  # Ensure this returns valid data
+        return predicted_data,real_data, min(predicted_data), max(predicted_data)
+
     except Exception as e:
         raise Exception(f"Error while fetching last 24 predictions: {e}")
 
 # Fetch pollution data and default ranges
-pollution_data, pm10_min, pm10_max = preparePollutionData()
-if pollution_data is None:
+simulated_pollution_data,real_data, pm10_min, pm10_max = preparePollutionData()
+if simulated_pollution_data is None:
     raise Exception("Unable to load PM10 data.")
 
 # Number of Monte Carlo simulations per hour
-NUM_SIMULATIONS = 10
+NUM_SIMULATIONS = 1000
 
 # Initialize lists for plotting results
 hours = []
@@ -58,29 +50,32 @@ def confidence_interval(data, confidence=0.95):
 
 
 # Monte Carlo simulation for each hour based on actual PM10 values in the CSV
-for idx, row in pollution_data.iterrows():
-    hour = row['Date'].hour
-    actual_value = row['PM10']
+counter = 0
+for row in simulated_pollution_data:
 
-    # Estimate mean and std deviation for normal distribution
-    mean_by_real_value = np.mean(pollution_data['PM10'])
-    std_dev_by_real_value = np.std(pollution_data['PM10'], ddof=1)
+    mean_by_real_value = np.mean(simulated_pollution_data)
+    std_dev_by_real_value = np.std(simulated_pollution_data, ddof=1)
 
     # Run simulations for the current hour
-    # simulated_values = np.random.normal(mean_val, std_dev, NUM_SIMULATIONS)
-    simulated_values = np.random.normal(row['PM10'], std_dev_by_real_value, NUM_SIMULATIONS)
-    print(f"Row value: {row['PM10']}")
+    simulated_values = np.random.normal(row, std_dev_by_real_value, NUM_SIMULATIONS)
+    print(f"Row value: {row}")
     mean, lower_ci, upper_ci = confidence_interval(simulated_values)
 
     # Append results for plotting
-    hours.append(hour)
+    hours.append(counter)
     simulated_means.append(mean)
     Cavg = round(np.mean(simulated_means))
     Clow = round(min(simulated_means), 2)
     Chigh = round(max(simulated_means), 2)
     lower_conf_intervals.append(lower_ci)
     upper_conf_intervals.append(upper_ci)
-    actual_values.append(actual_value)
+    actual_values.append(real_data[counter])
+    counter += 1
+
+sns.histplot(data=simulated_values, kde=True)
+sns.kdeplot(data=simulated_values)
+
+
 print("______________________________________")
 print("AIR QUALITY INDEX for SIMULATION")
 print(f"Index mean:  {Cavg}")
@@ -152,6 +147,7 @@ for hour, mean, ci, actual in zip(hours, simulated_means, zip(lower_conf_interva
                                   actual_values):
     print(f"\n--- Hour {hour} ---")
     print(f"Mean simulated PM10: {mean:.2f}")
-    print(f"95% Confidence Interval: ({ci[0]:.2f}, {ci[1]:.2f})")
+    print(f"95% Confidence Interval: (Lower: {ci[0]:.2f}, Upper: {ci[1]:.2f})")
     print(f"Actual PM10: {actual}")
-    print(f"Delta (Actual - Simulated Mean): {actual - mean:.2f}")
+    print(f"Delta (Actual - Simulated Mean): {actual - mean:.2f},  ")
+

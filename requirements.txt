@@ -7,3 +7,5 @@ requests
 statsmodels
 tensorflow
 keras
+tensorflow_probability
+emcee

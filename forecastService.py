@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from tensorflow.keras.models import Sequential, load_model
-from tensorflow.keras.layers import LSTM, Dense, Input
+from  .keras.layers import LSTM, Dense, Input
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import MeanSquaredError
@@ -77,8 +77,8 @@ plt.legend()
 plt.show()
 
 # Method to return the last 24 predictions
-def get_last_24_predictions():
-    return pd.DataFrame(last_24_predictions)
+def get_last_24_predictions_reals():
+    return test_predictions[-24:],y_test[-24:]
 def last_24_predictions():
     # Return the last 24 predictions as a DataFrame
     return last_24_predictions

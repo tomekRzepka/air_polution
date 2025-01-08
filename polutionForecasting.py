@@ -31,7 +31,7 @@ X_train, y_train = X[:11000], y[:11000]
 X_val, y_val = X[11000:13000], y[11000:13000]
 X_test, y_test = X[13000:], y[13000:]
 
-(h)(11,11.2,..,n)  -> n - ilośc dni
+
 
 # Model definition
 model1 = Sequential([
