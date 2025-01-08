@@ -1,0 +1,48 @@
+import psycopg2
+import csv
+
+connection = psycopg2.connect(database="nazwa bazy", user="postgres", password="haslo do bazy", host="localhost", port=5432)
+
+cursor = connection.cursor()
+
+table_name = input("Podaj nazwe tabeli: ")
+collumn_names = input("Podaj nazwy kolumn (oddzielone przecinkiem): ").split(",")
+
+
+def dodaj_csv():
+    with open("dane.csv.txt", mode='r') as file:
+        reader = csv.reader(file)
+        next(reader, None)
+
+        for csv_row in reader:
+            columns = []
+            values = []
+
+            for i, value in enumerate(csv_row):
+                if value:
+                    columns.append(collumn_names[i])
+                    values.append(value)
+
+            if "data" in columns:
+                data_index = columns.index("data")
+                data_value = values[data_index]
+
+                cursor.execute(f"SELECT 1 FROM {table_name} WHERE data = %s", (data_value,))
+                if cursor.fetchone():
+                    print(f"Wiersz z datą {data_value} już istnieje i został pominięty")
+                    continue
+
+            query = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(values))});"
+            cursor.execute(query, values)
+
+
+connection.commit()
+
+cursor.execute("SELECT * FROM stacja1")
+rows = cursor.fetchall()
+for row in rows:
+    print(row)
+
+connection.commit()
+cursor.close()
+connection.close()
