@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from tensorflow.keras.models import Sequential, load_model
-from  .keras.layers import LSTM, Dense, Input
+from tensorflow.keras.layers import LSTM, Dense, Input
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import MeanSquaredError
@@ -9,9 +9,9 @@ from tensorflow.keras.metrics import RootMeanSquaredError
 import matplotlib.pyplot as plt
 
 # Dataset loading and preprocessing
-file_path = "pm10pomiaryTest.csv"
+file_path = "dane/pomiarpm10Warszawa-Niepodległosci.csv"
 data = pd.read_csv(file_path, usecols=['Date', 'PM10'], parse_dates=['Date'])
-data.index = pd.to_datetime(data['Date'], format='%d.%m.%Y %H:%M:%S')
+data.index = pd.to_datetime(data['Date'], format='%Y-%m-%d %H:%M')
 temp = data['PM10']
 
 # Normalize data to range [0, 1] for better LSTM performance

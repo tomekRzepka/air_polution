@@ -2,14 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats as stats
-import psycopg2
-import requests
 import forecastService as fc
 import seaborn as sns
-
-
-
-file_path = "pm10pomiaryCopy.csv"
 
 # Function to prepare pollution data, specifically for PM10
 def preparePollutionData():
@@ -28,7 +22,7 @@ if simulated_pollution_data is None:
     raise Exception("Unable to load PM10 data.")
 
 # Number of Monte Carlo simulations per hour
-NUM_SIMULATIONS = 1000
+NUM_SIMULATIONS = 100
 
 # Initialize lists for plotting results
 hours = []
@@ -53,17 +47,17 @@ def confidence_interval(data, confidence=0.95):
 counter = 0
 for row in simulated_pollution_data:
 
-    mean_by_real_value = np.mean(simulated_pollution_data)
-    std_dev_by_real_value = np.std(simulated_pollution_data, ddof=1)
+    mean_by_predicted_values = np.mean(simulated_pollution_data)
+    std_dev_for_predicted_values = round(np.std(simulated_pollution_data, ddof=1),2)
 
     # Run simulations for the current hour
-    simulated_values = np.random.normal(row, std_dev_by_real_value, NUM_SIMULATIONS)
+    simulated_values = np.random.normal(row, std_dev_for_predicted_values, NUM_SIMULATIONS)
     print(f"Row value: {row}")
     mean, lower_ci, upper_ci = confidence_interval(simulated_values)
 
     # Append results for plotting
     hours.append(counter)
-    simulated_means.append(mean)
+    simulated_means.append(round(mean,2))
     Cavg = round(np.mean(simulated_means))
     Clow = round(min(simulated_means), 2)
     Chigh = round(max(simulated_means), 2)
@@ -113,14 +107,14 @@ match Cavg:
     case Cavg if 254 < Cavg <= 354:
         IhighUS = 200
         IlowUS = 151
-Sim_indexEU = ((IhighEU - IlowEU) / (Chigh - Clow)) * (Cavg - Clow) + IlowEU
-Sim_indexUS = ((IhighUS - IlowUS) / (Chigh - Clow)) * (Cavg - Clow) + IlowUS
+Sim_indexEU = round((((IhighEU - IlowEU) / (Chigh - Clow)) * (Cavg - Clow) + IlowEU),2)
+Sim_indexUS = round((((IhighUS - IlowUS) / (Chigh - Clow)) * (Cavg - Clow) + IlowUS),2)
 
 print(f"Simulation AQI EU :  {Sim_indexEU}")
 print(f"Simulation AQI US :  {Sim_indexUS}")
 
 print(f"Random points for simulation: {simulated_means}")
-print(f"Standard deviation of source data: {std_dev_by_real_value}")
+print(f"Standard deviation of source data: {std_dev_for_predicted_values}")
 # Plotting
 plt.figure(figsize=(12, 6))
 
@@ -134,7 +128,7 @@ plt.scatter(hours, upper_conf_intervals, color='black', alpha=0.3,
 plt.plot(hours, actual_values, 'ro-', label="Actual PM10", markersize=5)
 
 # Labels and Legend
-plt.title("PM10 Simulation Over 24 Hours X10")
+plt.title("PM10 Simulation Over 24 Hours X100")
 plt.xlabel("Hour")
 plt.ylabel("PM10 Value")
 plt.legend()

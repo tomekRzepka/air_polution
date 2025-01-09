@@ -9,7 +9,7 @@ from tensorflow.keras.metrics import RootMeanSquaredError
 import matplotlib.pyplot as plt
 
 # Dataset loading and preprocessing
-file_path = "pm10pomiaryTest.csv"
+file_path = "dane/pm10pomiaryTest.csv"
 data = pd.read_csv(file_path, usecols=['Date', 'PM10'], parse_dates=['Date'])
 data.index = pd.to_datetime(data['Date'], format='%d.%m.%Y %H:%M:%S')
 temp = data['PM10']
