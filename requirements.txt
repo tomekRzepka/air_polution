@@ -9,3 +9,4 @@ tensorflow
 keras
 tensorflow_probability
 emcee
+scikit-learn

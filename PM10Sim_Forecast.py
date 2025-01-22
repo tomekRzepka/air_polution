@@ -50,8 +50,8 @@ for row in simulated_pollution_data:
     mean_by_predicted_values = np.mean(simulated_pollution_data)
     std_dev_for_predicted_values = round(np.std(simulated_pollution_data, ddof=1),2)
 
-    # Run simulations for the current hour
-    simulated_values = np.random.normal(row, std_dev_for_predicted_values, NUM_SIMULATIONS)
+    # Run simulations for the current hoursimulated_values = np.random.normal(row, std_dev_for_predicted_values, NUM_SIMULATIONS)
+
     print(f"Row value: {row}")
     mean, lower_ci, upper_ci = confidence_interval(simulated_values)
 
