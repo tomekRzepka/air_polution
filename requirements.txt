@@ -10,3 +10,5 @@ keras
 tensorflow_probability
 emcee
 scikit-learn
+xgboost
+pandasql

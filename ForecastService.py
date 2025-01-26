@@ -9,7 +9,7 @@ from tensorflow.keras.metrics import RootMeanSquaredError
 import matplotlib.pyplot as plt
 
 # Dataset loading and preprocessing
-file_path = "dane/pomiarpm10Warszawa-Niepodległosci.csv"
+file_path = "dane/pm10pomiaryTest.csv"
 data = pd.read_csv(file_path, usecols=['Date', 'PM10'], parse_dates=['Date'])
 data.index = pd.to_datetime(data['Date'], format='%Y-%m-%d %H:%M')
 temp = data['PM10']
@@ -33,9 +33,9 @@ def data_to_X_y(data, window_size=5):
 
 WINDOW_SIZE = 5
 X, y = data_to_X_y(normalized_temp, WINDOW_SIZE)
-X_train, y_train = X[:11000], y[:11000]
-X_val, y_val = X[11000:13000], y[11000:13000]
-X_test, y_test = X[13000:], y[13000:]
+X_train, y_train = X[:10500], y[:10500]
+X_val, y_val = X[10501:12750], y[10501:12750]
+X_test, y_test = X[12751:], y[12751:]
 
 # Model definition
 model1 = Sequential([
@@ -49,8 +49,12 @@ model1.summary()
 
 # Model training
 cp = ModelCheckpoint('model1.keras', save_best_only=True)
-model1.compile(loss=MeanSquaredError(), optimizer=Adam(learning_rate=0.0001), metrics=[RootMeanSquaredError()])
-model1.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=10, callbacks=[cp])
+model1.compile(loss=MeanSquaredError(),
+               optimizer=Adam(learning_rate=0.0001),
+               metrics=[RootMeanSquaredError()])
+model1.fit(X_train, y_train,
+           validation_data=(X_val, y_val),
+           epochs=10, callbacks=[cp])
 
 # Load the best model
 model1 = load_model('model1.keras')
@@ -58,30 +62,22 @@ model1 = load_model('model1.keras')
 # Make predictions on the test set
 test_predictions = model1.predict(X_test).flatten()
 
-# De-normalize predictions and actual values to original scale
+# De-normalize predictions to original scale
 test_predictions = test_predictions * (data_max - data_min) + data_min
+
+
 y_test = y_test * (data_max - data_min) + data_min
 
 # Extract the last 24 predictions
-last_24_predictions = test_predictions[-24:]
-last_24_actuals = y_test[-24:]
+last_week_predictions = test_predictions[-168:]
+last_week_actuals = temp[-168:]
 
-# Plot predictions and actuals
-plt.figure(figsize=(12, 6))
-plt.plot(range(len(last_24_predictions)), last_24_predictions, label='Predictions', marker='o')
-plt.plot(range(len(last_24_actuals)), last_24_actuals, label='Actuals', marker='x')
-plt.title('Last 24 Predictions vs Actuals')
-plt.xlabel('Time (Hours)')
-plt.ylabel('PM10 Value')
-plt.legend()
-plt.show()
-
-# Method to return the last 24 predictions
+# Method to return the last 24 predictions with real data
 def get_last_24_predictions_reals():
-    return test_predictions[-24:],y_test[-24:]
+    return test_predictions[-24:],temp[-24:]
 def last_24_predictions():
     # Return the last 24 predictions as a DataFrame
-    return last_24_predictions
+    return test_predictions[-24:]
 
 # Print the last 24 predictions
 print("Last 24 Predictions:", last_24_predictions)
