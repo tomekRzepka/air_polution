@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import scipy.stats as stats
 import ForecastService as fc
 import AirPollutionRepository as repo
+import PresentationService as ps
 
 # Function to prepare pollution data, specifically for PM10
 pollution_name = "pm10"
@@ -15,29 +16,37 @@ def preparePollutionData():
     # Default min and max values for {pollution_name}
 
     try:
-        predicted_data, real_data = fc.get_last_24_predictions_reals()  # Ensure this returns valid data
-        return predicted_data, real_data, min(predicted_data), max(predicted_data)
+        predicted_data, real_data = fc.get_predictions_tests()  # Ensure this returns valid data
+        return predicted_data, real_data,
 
     except Exception as e:
         raise Exception(f"Error while fetching last 24 predictions: {e}")
 
 
 # Fetch pollution data and default ranges
-pollution_data, real_data, pollution_min, pollution_max = preparePollutionData()
-if pollution_data is None:
+predicted_data, real_data = preparePollutionData()
+
+ps.tree_month_prediction(predicted_data, real_data, pollution_name)
+
+predicted_data_24 = predicted_data[-24:]
+real_data_24 = real_data[-24:]
+pollution_min = min(predicted_data_24)
+pollution_max = max(predicted_data_24)
+
+if predicted_data_24 is None:
     raise Exception(f"Unable to load {pollution_name} data.")
 
-hours = list(range(1, 25))
 
-mean_predicted = np.mean(pollution_data)
+
+mean_predicted = np.mean(predicted_data_24)
 Cavg_predicted = round(mean_predicted, 2)
 Clow_predicted = round(pollution_min, 2)
 Chigh_predicted = round(pollution_max, 2)
 
-mean_real = np.mean(real_data)
+mean_real = np.mean(real_data_24)
 Cavg_real = round(mean_real, 2)
-Clow_real = round(min(real_data), 2)
-Chigh_real = round(max(real_data), 2)
+Clow_real = round(min(real_data_24), 2)
+Chigh_real = round(max(real_data_24), 2)
 
 print("______________________________________")
 print("AIR QUALITY INDEX FOR PREDICTIONS")
@@ -90,7 +99,7 @@ print(f"Real AQI EU :  {real_indexEU}")
 print(f"Real AQI US :  {real_indexUS}")
 
 # Save or update the data
-repo.save_pollution_data(station_code,pollution_name, Cavg_predicted, Cavg_real)
+repo.save_pollution_data(station_code, pollution_name, Cavg_predicted, Cavg_real)
 # Fetch highest AQI pair from database for selected station
 max_predicted, max_predicted_column, max_real, max_real_column = repo.fetch_max_AQI_values_for_station(station_code)
 print("______________________________________")
@@ -98,19 +107,5 @@ print(f"For station {station_code} AQImax based on predicted values : {max_predi
 print(f"For station {station_code} AQImax based on real values: {max_real_column}: {max_real} ")
 
 
-# Plotting
-plt.figure(figsize=(12, 6))
+ps.get_24_results_view(predicted_data_24, real_data_24, pollution_name)
 
-# Plot the mean simulated values with confidence intervals as a shaded area
-plt.plot(hours, pollution_data, color='blue', label=f"Predicted {pollution_name}", markersize=3)
-# Plot the actual PM10 values as points
-plt.plot(hours, real_data, 'ro-', label=f"Actual {pollution_name}", markersize=3)
-
-# Labels and Legend
-plt.title(f"{pollution_name} Prediction Over 24 Hours")
-plt.xlabel("Hour")
-plt.ylabel(f"{pollution_name} Value")
-plt.legend()
-plt.grid(True)
-plt.tight_layout()
-plt.show()

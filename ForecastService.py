@@ -6,13 +6,15 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import MeanSquaredError
 from tensorflow.keras.metrics import RootMeanSquaredError
-import matplotlib.pyplot as plt
+import PresentationService as ps
 
 # Dataset loading and preprocessing
-file_path = "dane/pm10pomiaryTest.csv"
+file_path = "dane/pomiarpm10Warszawa-Niepodległosci.csv"
 data = pd.read_csv(file_path, usecols=['Date', 'PM10'], parse_dates=['Date'])
 data.index = pd.to_datetime(data['Date'], format='%Y-%m-%d %H:%M')
 temp = data['PM10']
+
+ps.datasets_view(temp,data,"PM10")
 
 # Normalize data to range [0, 1] for better LSTM performance
 data_min = temp.min()
@@ -79,5 +81,11 @@ def last_24_predictions():
     # Return the last 24 predictions as a DataFrame
     return test_predictions[-24:]
 
+
+def get_predictions_tests():
+    return test_predictions[-2160:], y_test[-2160:]
+
+def last_week():
+ return test_predictions[-168:], temp[-168:]
 # Print the last 24 predictions
 print("Last 24 Predictions:", last_24_predictions)
