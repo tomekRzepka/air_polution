@@ -9,7 +9,7 @@ from tensorflow.keras.metrics import RootMeanSquaredError
 import PresentationService as ps
 
 # Dataset loading and preprocessing
-file_path = "dane/pomiarpm10Warszawa-Niepodległosci.csv"
+file_path = "dane/WarszawaNiepodleglosciPM10.csv"
 data = pd.read_csv(file_path, usecols=['Date', 'PM10'], parse_dates=['Date'])
 data.index = pd.to_datetime(data['Date'], format='%Y-%m-%d %H:%M')
 temp = data['PM10']

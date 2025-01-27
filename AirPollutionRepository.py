@@ -1,4 +1,4 @@
-from sqlalchemy import update
+from sqlalchemy import update, select
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy import Column, String, Float, BigInteger
@@ -31,6 +31,10 @@ class AirPollutionPrediction(Base):
     so2_real = Column(Float, default=0)
     no2_predicted = Column(Float, default=0)
     no2_real = Column(Float, default=0)
+
+    def to_dict(self):
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+
 
 def save_pollution_data(station_code, pollution_name, predicted_value, real_value):
     try:
@@ -123,4 +127,21 @@ def fetch_max_AQI_values_for_station(station_code):
             return None
     except Exception as e:
         print(f"Error fetching max values for station: {e}")
+        return None
+
+
+def fetch_station(station_code):
+    try:
+        stmt = select(AirPollutionPrediction).where(AirPollutionPrediction.station_code_pl == station_code)
+        result = session.execute(stmt).scalars().first()
+
+        if result:
+            print(f"Found station: {result.station_name} (Code: {station_code})")
+            return result
+        else:
+            print(f"No station found for code: {station_code}")
+            return None
+
+    except Exception as e:
+        print(f"Error fetching station data: {e}")
         return None
