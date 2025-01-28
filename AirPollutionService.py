@@ -7,9 +7,10 @@ import AirPollutionRepository as repo
 import PresentationService as ps
 
 # Function to prepare pollution data, specifically for PM10
-pollution_name = "pm10"
-station_name = "TEST"
-station_code = "testCode"
+pollution_name = "SO2"
+pollution_column = "so2"
+station_name = "GdanskLeczkowskiego"
+station_code = "PL0052A"
 
 
 def preparePollutionData():
@@ -99,7 +100,7 @@ print(f"Real AQI EU :  {real_indexEU}")
 print(f"Real AQI US :  {real_indexUS}")
 
 # Save or update the data
-repo.save_pollution_data(station_code, pollution_name, Cavg_predicted, Cavg_real)
+repo.save_pollution_data(station_name,station_code, pollution_column, Cavg_predicted, Cavg_real)
 # Fetch highest AQI pair from database for selected station
 max_predicted, max_predicted_column, max_real, max_real_column = repo.fetch_max_AQI_values_for_station(station_code)
 print("______________________________________")

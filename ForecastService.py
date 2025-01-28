@@ -9,12 +9,12 @@ from tensorflow.keras.metrics import RootMeanSquaredError
 import PresentationService as ps
 
 # Dataset loading and preprocessing
-file_path = "dane/WarszawaNiepodleglosciPM10.csv"
-data = pd.read_csv(file_path, usecols=['Date', 'PM10'], parse_dates=['Date'])
+file_path = "dane/GdanskLeczkowaSO2.csv"
+data = pd.read_csv(file_path, usecols=['Date', 'SO2'], parse_dates=['Date'])
 data.index = pd.to_datetime(data['Date'], format='%Y-%m-%d %H:%M')
-temp = data['PM10']
+temp = data['SO2']
 
-ps.datasets_view(temp,data,"PM10")
+ps.datasets_view(temp,data,"SO2")
 
 # Normalize data to range [0, 1] for better LSTM performance
 data_min = temp.min()

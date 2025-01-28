@@ -36,7 +36,7 @@ class AirPollutionPrediction(Base):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
 
-def save_pollution_data(station_code, pollution_name, predicted_value, real_value):
+def save_pollution_data(station_name,station_code, pollution_name, predicted_value, real_value):
     try:
         # Dynamically construct column names based on pollution_name
         station_code = station_code.encode("utf-8", errors="ignore").decode("utf-8")
@@ -66,7 +66,7 @@ def save_pollution_data(station_code, pollution_name, predicted_value, real_valu
             # Add a new record if the station does not exist
             new_station = AirPollutionPrediction(
                 station_code_pl=station_code,
-                station_name=station_code,
+                station_name=station_name,
                 station_code_global=station_code,
                 **{pollution_predicted: float(predicted_value), pollution_real: float(real_value)}
             )

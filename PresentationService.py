@@ -8,7 +8,7 @@ def datasets_view(temp, data, pollution_name):
     fig, ax = plt.subplots(figsize=(15, 5))
     train = temp.loc[data.index < '2024-09-15']
     test = temp.loc[data.index >= '2024-09-15']
-    train.plot(ax=ax, label='Training set', title=f'{pollution_name} Data Train / Test Set')
+    train.plot(ax=ax, label='Training set', title=f'{pollution_name} Data Train / Test Set', ylabel = f"{pollution_name} µg/m^3")
     test.plot(ax=ax, label='Test set')
     ax.axvline(x='2024-09-15', color='black', ls='--')
     ax.legend(['Training Set', 'Test Set'])
@@ -33,7 +33,7 @@ def tree_month_prediction(test_predictions, y_test, pollution_name):
     # Dodanie tytułu, etykiet osi i legendy
     plt.title("Comparison of Predicted and Actual Values Over 90 Days", fontsize=14)
     plt.xlabel("Days", fontsize=12)
-    plt.ylabel(f"{pollution_name} Value", fontsize=12)
+    plt.ylabel(f"{pollution_name} Value µg/m^3", fontsize=12)
     plt.xticks(ticks=np.linspace(1, days, 10), labels=[f"Day {int(x)}" for x in np.linspace(1, days, 10)])
     plt.legend()
     plt.grid(True)
@@ -55,7 +55,7 @@ def get_24_results_view(predicted_data_24, real_data_24, pollution_name):
     # Labels and Legend
     plt.title(f"{pollution_name} Prediction Over 24 Hours")
     plt.xlabel("Hour")
-    plt.ylabel(f"{pollution_name} Value")
+    plt.ylabel(f"{pollution_name} Value µg/m^3")
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
