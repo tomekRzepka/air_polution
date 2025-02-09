@@ -7,10 +7,10 @@ import AirPollutionRepository as repo
 import PresentationService as ps
 
 # Function to prepare pollution data, specifically for PM10
-pollution_name = "SO2"
-pollution_column = "so2"
-station_name = "GdanskLeczkowskiego"
-station_code = "PL0052A"
+pollution_name = "NO2"
+pollution_column = "no2"
+station_name = "WarszawaNiepodleglosci"
+station_code = "PL0140A"
 
 
 def preparePollutionData():
@@ -27,7 +27,7 @@ def preparePollutionData():
 # Fetch pollution data and default ranges
 predicted_data, real_data = preparePollutionData()
 
-ps.tree_month_prediction(predicted_data, real_data, pollution_name)
+ps.test_prediction_view(predicted_data, real_data, pollution_name)
 
 predicted_data_24 = predicted_data[-24:]
 real_data_24 = real_data[-24:]
@@ -95,12 +95,12 @@ real_indexEU = round((((IhighEU - IlowEU) / (Chigh_real - Clow_real)) * (Cavg_re
 real_indexUS = round((((IhighUS - IlowUS) / (Chigh_real - Clow_real)) * (Cavg_real - Clow_real) + IlowUS), 2)
 
 print(f"Predicted AQI EU :  {predicted_indexEU}")
-print(f"Predicted AQI US :  {predicted_indexUS}")
+# print(f"Predicted AQI US :  {predicted_indexUS}")
 print(f"Real AQI EU :  {real_indexEU}")
-print(f"Real AQI US :  {real_indexUS}")
+# print(f"Real AQI US :  {real_indexUS}")
 
 # Save or update the data
-repo.save_pollution_data(station_name,station_code, pollution_column, Cavg_predicted, Cavg_real)
+repo.save_pollution_data(station_name,station_code, pollution_column, predicted_indexEU, real_indexEU)
 # Fetch highest AQI pair from database for selected station
 max_predicted, max_predicted_column, max_real, max_real_column = repo.fetch_max_AQI_values_for_station(station_code)
 print("______________________________________")
